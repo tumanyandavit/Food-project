@@ -1,0 +1,30 @@
+{
+  "name": "food-project",
+  "version": "0.1.0",
+  "description": "food project by group3 developers",
+  "main": "index.js",
+  "scripts": {
+    "serve": "json-server --watch db.json --port 8888"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tumanyandavit/javascript-typescript-course.git"
+  },
+  "keywords": [
+    "web",
+    "front-end",
+    "food-blog"
+  ],
+  "author": "group3",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tumanyandavit/javascript-typescript-course/issues"
+  },
+  "homepage": "https://github.com/tumanyandavit/javascript-typescript-course#readme",
+  "devDependencies": {
+    "json-server": "^0.17.3"
+  },
+  "dependencies": {
+    "axios": "^1.4.0"
+  }
+}
