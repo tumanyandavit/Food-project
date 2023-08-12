@@ -84,7 +84,7 @@ window.addEventListener("DOMContentLoaded", function () {
 		}
 		updateClock();
 	}
-	setClock(".timer", "2023-08-18 22:15:00");
+	setClock(".timer", "2023-12-31 23:59:59");
 	// timer logic end
 
 	// modal logic start
@@ -315,22 +315,42 @@ window.addEventListener("DOMContentLoaded", function () {
 				form.reset();
 			}
 
-			const formData = new FormData(form);
-			//    const data = JSON.stringify(Object.fromEntries(formData.entries()));
+			const empty = /^$/g;
+			const phone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]?[0-9]{4,6}$/im;
+			let status = false;
 
-			//    postData("http://localhost:8888/requests", data)
-			axios.post("http://localhost:8888/requests", Object.fromEntries(formData.entries()))
-				.then(data => {
-					console.log(data);
-					messagesModal(success);
-				})
-				.catch(err => {
-					messagesModal(failure + ": " + err)
-				})
-				.finally(() => {
+			for (let i = 0; i < form.querySelectorAll("input").length; i++) {
+				if (empty.test(form[i].value) || !phone.test(form[1].value)) {
+                    status = false;
+					messagesModal("Please fill all fildes. On phone filed please fill telephone number format");
 					loader.remove();
 					form.reset();
-				});
+					break;
+				} else {
+					status = true;
+				}
+			}
+
+			if (status) {
+				const formData = new FormData(form);
+				//    const data = JSON.stringify(Object.fromEntries(formData.entries()));
+	
+				//    postData("http://localhost:8888/requests", data)
+				axios.post("http://localhost:8888/requests", Object.fromEntries(formData.entries()))
+					.then(data => {
+						console.log(data);
+						messagesModal(success);
+					})
+					.catch(err => {
+						messagesModal(failure + ": " + err)
+					})
+					.finally(() => {
+						loader.remove();
+						form.reset();
+					});
+			} else {
+               console.log("status is falsed");
+			}
 		});
 	}
 
@@ -372,13 +392,7 @@ window.addEventListener("DOMContentLoaded", function () {
 	let slideIndex = 1;
 	let offset = 0;
 
-	if (slides.length < 10) {
-		total.textContent = `0${slides.length}`;
-		current.textContent = `0${slideIndex}`;
-	} else {
-		total.textContent = slides.length;
-		current.textContent = slideIndex;
-	}
+	checkForZero()
 
 	slidesInner.style.cssText = `
 	  display: flex;
@@ -387,10 +401,7 @@ window.addEventListener("DOMContentLoaded", function () {
 	`;
 
 	slidesWrapper.style.overflow = "hidden";
-
-	slides.forEach(slide => {
-		slide.style.width = width;
-	});
+	slides.forEach(slide => slide.style.width = width);
 
 	slider.style.position = "relative";
     
@@ -437,78 +448,50 @@ window.addEventListener("DOMContentLoaded", function () {
 		dots.push(dot);
 	}
 
-	next.addEventListener("click", () => {
-        if (offset === parseFloat(width.slice(0, width.length - 2)) * (slides.length - 1)) {
-			offset = 0;
-		} else {
-			offset +=  parseFloat(width.slice(0, width.length - 2));
-		}
-
-		slidesInner.style.transform = `translateX(-${offset}px)`;
-
-		if (slideIndex === slides.length || slideIndex >= slides.length) {
-			slideIndex = 1;
-		} else {
-			slideIndex++;
-		}
-
-		if (slides.length < 10) {
-			total.textContent = `0${slides.length}`;
-			current.textContent = `0${slideIndex}`;
-		} else {
-			total.textContent = slides.length;
-			current.textContent = slideIndex;
-		}
-
-		dots.forEach(dot => dot.style.opacity = 0.5);
-		dots[slideIndex - 1].style.opacity = 1;
-	});
-
-	prev.addEventListener("click", () => {
-		if (offset === 0) {
-           offset = parseFloat(width.slice(0, width.length - 2)) * (slides.length - 1);
-		} else {
-			offset -= parseFloat(width.slice(0, width.length - 2))
-		}
-		slidesInner.style.transform = `translateX(-${offset}px)`;
-
-		if (slideIndex === 1 || slideIndex <= 1) {
-			slideIndex = slides.length;
-		} else {
-			slideIndex--;
-		}
-
-		if (slides.length < 10) {
-			total.textContent = `0${slides.length}`;
-			current.textContent = `0${slideIndex}`;
-		} else {
-			total.textContent = slides.length;
-			current.textContent = slideIndex;
-		}
-
-		dots.forEach(dot => dot.style.opacity = 0.5);
-		dots[slideIndex - 1].style.opacity = 1;
-	});
+	next.addEventListener("click", () => sliderLogic(+width.replace(/\D/g, "") * (slides.length - 1), true, false));
+	prev.addEventListener("click", () => sliderLogic(0, false, true));
 
 	dots.forEach(dot => {
 		dot.addEventListener("click", (e) => {
 			const slideTo = e.target.getAttribute("data-slide-to");
 			slideIndex = slideTo;
-			offset = parseFloat(width.slice(0, width.length - 2)) * (slideTo - 1);
+			offset = +width.replace(/\D/g, "") * (slideTo - 1);
 			slidesInner.style.transform = `translateX(-${offset}px)`;
-
-			if (slides.length < 10) {
-				total.textContent = `0${slides.length}`;
-				current.textContent = `0${slideIndex}`;
-			} else {
-				total.textContent = slides.length;
-				current.textContent = slideIndex;
-			}
-
-			dots.forEach(dot => dot.style.opacity = 0.5);
-			dots[slideIndex - 1].style.opacity = 1;
-		})
+			checkForZero();
+			dotLogic();
+		});
 	})
+
+	function checkForZero() {
+		if (slides.length < 10) {
+			total.textContent = `0${slides.length}`;
+			current.textContent = `0${slideIndex}`;
+		} else {
+			total.textContent = slides.length;
+			current.textContent = slideIndex;
+		}
+	}
+
+	function dotLogic () {
+		dots.forEach(dot => dot.style.opacity = 0.5);
+		dots[slideIndex - 1].style.opacity = 1;
+	}
+
+	function sliderLogic (statement, next = false, prev = false) {
+		if (next === true && prev === false) {
+            slideIndex === slides.length || slideIndex >= slides.length ? slideIndex = 1 : slideIndex++;
+			offset === statement ? offset = 0 : offset += +width.replace(/\D/g, "");
+		}
+
+		if (next === false && prev === true) {
+			slideIndex === 1 || slideIndex <= 1 ? slideIndex = slides.length : slideIndex--;
+			offset === statement ? offset =  +width.replace(/\D/g, "") * (slides.length - 1) : offset -= +width.replace(/\D/g, "");
+		}
+
+		slidesInner.style.transform = `translateX(-${offset}px)`;
+		checkForZero();
+		dotLogic();
+	}
 
 
 	// let slideIndex = 1;
@@ -547,4 +530,127 @@ window.addEventListener("DOMContentLoaded", function () {
 	// function slidesState(n) {
 	// 	showSlides(slideIndex += n);
 	// }
+
+	const result = document.querySelector(".calculating__result span");
+	let gender, height, weight, age, ratio;
+
+	function initStartSettings (key, value, variable) {
+		if (localStorage.getItem(key)) {
+			variable = localStorage.getItem(key)
+		} else {
+			variable = value;
+			localStorage.setItem(key, value);
+		}
+	}
+	initStartSettings("gender", "female", gender);
+	initStartSettings("ratio", 1.375, ratio);
+
+	// if (this.localStorage.getItem("gender")) {
+    //     gender = localStorage.getItem("gender")
+	// } else {
+	// 	gender = "female";
+	// 	localStorage.setItem("gender", "female");
+	// }
+
+	// if (localStorage.getItem("radio")) {
+    //   ratio = localStorage.getItem("ratio")
+	// } else {
+	// 	ratio = 1.375;
+	// 	localStorage.setItem("ratio", 1.375);
+	// }
+
+	function calcTotal () {
+		if (!gender || !height || !weight || !age || !ratio) {
+           result.textContent = "_____";
+		   return;
+		}
+
+		if (gender === "female") {
+			result.textContent = Math.round(((10 * weight) + (6.25 * height) - (5 * age) - 161) * ratio);
+		} else if (gender === "male") {
+			result.textContent = Math.round(((10 * weight) + (6.25 * height) - (5 * age) + 5) * ratio);
+		} else {
+			result.textContent = "____";
+		}
+ 	}
+
+	 calcTotal();
+
+	 function initLocalSettings (selector, activeClass) {
+		const elements = document.querySelectorAll(selector);
+        
+		elements.forEach(elem => {
+			elem.classList.remove(activeClass);
+
+			if (elem.getAttribute("id") === localStorage.getItem("gender")) {
+			   elem.classList.add(activeClass);              
+			}
+
+			if (elem.dataset.ratio === localStorage.getItem("ratio")) {
+				elem.classList.add(activeClass);              
+			 }
+		})
+	 }
+
+	 initLocalSettings("#gender div", "calculating__choose-item_active");
+	 initLocalSettings(".calculating__choose_big div", "calculating__choose-item_active");
+
+	 function getStaticInformation (selector, activeClass) {
+       const elements = document.querySelectorAll(selector);
+
+	   elements.forEach(elem => {
+		elem.addEventListener("click", (e) => {
+			if (e.target.dataset.ratio) {
+               ratio = parseFloat(e.target.dataset.ratio);
+			   localStorage.setItem("ratio", parseFloat(e.target.dataset.ratio));
+			} else {
+				gender = e.target.getAttribute("id");
+				localStorage.setItem("gender", e.target.getAttribute("id"));
+			}
+
+			elements.forEach(elem => elem.classList.remove(activeClass));
+			e.target.classList.add(activeClass);
+			calcTotal();
+		});
+	   });
+	 }
+
+	 getStaticInformation("#gender div", "calculating__choose-item_active");
+
+	 getStaticInformation(".calculating__choose_big div", "calculating__choose-item_active");
+
+	 function getDynamicInformation (selector) {
+       const input = document.querySelector(selector);
+
+	   input.addEventListener("input", () => {
+		const val = input.value;
+
+        if (val.match(/\D/g)) {
+           input.style.border = "1px solid red";
+		   const timerID = setTimeout(() => {
+			input.value = "";
+			input.removeAttribute("style");
+			clearTimeout(timerID)
+		   }, 200);
+		}
+
+         switch(input.getAttribute("id")) {
+        case "height":
+			height = parseFloat(val);
+			break;
+		case "weight":
+			weight = parseFloat(val);
+			break;
+		case "age":
+			age = parseFloat(val);
+			break;
+	   }
+
+	   calcTotal();
+	 });
+   }
+
+   getDynamicInformation("#height");
+   getDynamicInformation("#weight");
+   getDynamicInformation("#age");
 });
